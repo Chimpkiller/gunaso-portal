@@ -1,0 +1,59 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  role      Role     @default(CITIZEN)
+  requests  ServiceRequest[]
+  createdAt DateTime @default(now())
+}
+
+
+model ServiceRequest {
+  id          String        @id @default(uuid())
+  title       String
+  department  String
+  description String
+  status      RequestStatus @default(PENDING)
+
+  citizenId   String
+  citizen     User          @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+
+  // auditLogs   AuditLog[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+
+// model AuditLog {
+//   id          String         @id @default(uuid())
+//   action      String
+//   details     String
+//
+//   requestId   String
+//   request     ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+//
+//   timestamp   DateTime       @default(now())
+// }
+
+
+enum Role {
+  CITIZEN
+  ADMIN
+}
+
+enum RequestStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}
