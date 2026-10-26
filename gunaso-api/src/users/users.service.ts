@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js'
 import { Prisma, User } from '@prisma/client';
+import { AuthUser } from '../auth/types/auth.types.js';
 
 
 @Injectable()
@@ -45,3 +46,7 @@ export class UsersService {
         })
     }
 }
+    public sanitizeUser(user: PrismaUser): AuthUser {
+        const { password, ...safeUser } = user as any;
+        return safeUser as AuthUser;
+    }
