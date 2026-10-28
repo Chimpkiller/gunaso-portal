@@ -1,37 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js'
 import { Prisma, User as PrismaUser } from '@prisma/client';
 import { AuthUser } from '../auth/types/auth.types.js';
 
 
-
-
-    async findOne(id : string): Promise<User> {
-        const user = await this.prisma.user.findUnique({
-            where : { id },
-        });
-
-        if (!user) throw new NotFoundException(`User with ID ${id} not found`);
-        return user;
-    }
-
-
-    async update(id : string, data: Prisma.UserUpdateInput): Promise<User> {
-        await this.findOne(id);
-        return this.prisma.user.update({
-            where : { id },
-            data,
-        });
-    }
-
-
-    async remove(id : string) : Promise<User> {
-        await this.findOne(id);
-        return this.prisma.user.delete({
-            where : { id },
-        })
-    }
-}
 @Injectable()
 export class UsersService {
     constructor(private prisma: PrismaService ) {}
@@ -61,3 +33,31 @@ export class UsersService {
     async findAll(): Promise<PrismaUser[]> {
         return this.prisma.user.findMany();
     }
+
+
+    async findOne(id : string): Promise<AuthUser> {
+        const user = await this.prisma.user.findUnique({
+          where :  { id },
+        })
+        if (!user) throw new UnauthorizedException('Invalid credentials');
+
+        return this.sanitizeUser(user);
+    }
+
+
+    async update(id : string, data: Prisma.UserUpdateInput): Promise<PrismaUser> {
+        await this.findOne(id);
+        return this.prisma.user.update({
+            where : { id },
+            data,
+        });
+    }
+
+
+    async remove(id : string) : Promise<PrismaUser> {
+        await this.findOne(id);
+        return this.prisma.user.delete({
+            where : { id },
+        })
+    }
+}
