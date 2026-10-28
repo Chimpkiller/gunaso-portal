@@ -4,17 +4,6 @@ import { Prisma, User } from '@prisma/client';
 import { AuthUser } from '../auth/types/auth.types.js';
 
 
-@Injectable()
-export class UsersService {
-    constructor(private prisma: PrismaService ) {}
-
-    async create(data: Prisma.UserCreateInput): Promise<User> {
-        return this.prisma.user.create({
-          data,
-        });
-      }
-
-
     async findAll(): Promise<User[]> {
         return this.prisma.user.findMany();
     }
@@ -46,7 +35,29 @@ export class UsersService {
         })
     }
 }
+@Injectable()
+export class UsersService {
+    constructor(private prisma: PrismaService ) {}
+
+
     public sanitizeUser(user: PrismaUser): AuthUser {
         const { password, ...safeUser } = user as any;
         return safeUser as AuthUser;
     }
+
+
+    async create(data: Prisma.UserCreateInput): Promise<AuthUser> {
+        const hashedPassword = await Bun.password.hash(data.password, {
+          algorithm: 'argon2id',
+          memoryCost: 8,
+          timeCost: 3,
+        });
+
+        const user = await this.prisma.user.create({
+          data : { ...data, password : hashedPassword }
+        });
+
+        return this.sanitizeUser(user);
+      }
+
+
