@@ -2,6 +2,7 @@ import { Controller, Body, Param, Get, Post, Patch, Delete } from '@nestjs/commo
 import { UsersService } from './users.service.js';
 import { Prisma } from '@prisma/client';
 
+
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
@@ -36,6 +37,6 @@ export class UsersController {
     delete(
         @Param() userId : string,
     ) {
-        return this.usersService.delete(userId)
+        return this.usersService.remove(userId)
     }
 }
