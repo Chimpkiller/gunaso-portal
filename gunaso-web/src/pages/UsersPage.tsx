@@ -1,129 +1,113 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+
+
+const baseUrl: string = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
 
 interface User {
-  id: string;
-  name: string;
-  email: string;
+    id: string;
+    name: string;
+    email: string;
+    createdAt?: string;
 }
 
-export function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchUsers = async () => {
-    try {
-      const res = await fetch('http://localhost:3000/users');
-      if (!res.ok) throw new Error('Failed to fetch users');
-      const data = await res.json();
-      setUsers(data);
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
+export function UsersList() {
+    const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+    useEffect(() => {
+        async function fetchUsers() {
+            const token = localStorage.getItem('accessToken');
+            console.log(token)
+            try {
+                const response = await fetch(`${baseUrl}/users`, {
+                    method: 'GET',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                });
 
-  // 2. Create user on submit (POST /users)
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+                const data = await response.json();
 
-    try {
-      const res = await fetch('http://localhost:3000/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email }),
-      });
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to fetch users.');
+                }
 
-      if (!res.ok) throw new Error('Failed to create user');
+                setUsers(data);
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        }
 
-      // Clear form and refresh user list
-      setName('');
-      setEmail('');
-      fetchUsers();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+        fetchUsers();
+    }, []);
 
-  return (
-    <div className="max-w-2xl mx-auto p-6 font-sans">
-      <h1 className="text-2xl font-bold mb-6">User Management</h1>
+    return (
+        <div className="max-w-4xl mx-auto p-6 font-sans">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold">Registered Users</h1>
+                <a
+                    href="/register"
+                    className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
+                >
+                    Register New User
+                </a>
+            </div>
 
-      {/* Error Banner */}
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
-
-      {/* Create User Form */}
-      <form onSubmit={handleSubmit} className="bg-white p-4 border rounded shadow mb-8 space-y-4">
-        <h2 className="text-lg font-semibold">Add New User</h2>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded p-2"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded p-2"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? 'Saving...' : 'Create User'}
-        </button>
-      </form>
-
-      {/* User List Table */}
-      <div className="bg-white border rounded shadow overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="p-3 font-semibold text-gray-700">Name</th>
-              <th className="p-3 font-semibold text-gray-700">Email</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.length === 0 ? (
-              <tr>
-                <td colSpan={2} className="p-4 text-center text-gray-500">
-                  No users found.
-                </td>
-              </tr>
-            ) : (
-              users.map((user) => (
-                <tr key={user.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">{user.name}</td>
-                  <td className="p-3 text-gray-600">{user.email}</td>
-                </tr>
-              ))
+            {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    {error}
+                </div>
             )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+
+            {loading ? (
+                <div className="text-center py-8 text-gray-500">Loading users...</div>
+            ) : users.length === 0 ? (
+                <div className="text-center py-8 bg-gray-50 rounded border border-gray-200 text-gray-500">
+                    No users found.
+                </div>
+            ) : (
+                <div className="bg-white border rounded shadow overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Name
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Email
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    User ID
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {users.map((user) => (
+                                <tr key={user.id} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {user.name}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {user.email}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 font-mono">
+                                        <Link to={`/users/${user.id}`} className="hover:underline">
+                                          {user.id}
+                                        </Link>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
 }
