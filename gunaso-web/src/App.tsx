@@ -1,12 +1,14 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Outlet } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
-import { UsersPage } from './pages/UsersPage';
+import { UsersList } from './pages/UsersPage';
+import { UserProfile } from './pages/User';
+import { UsersRegister } from './pages/auth/register';
+import { UsersLogin } from './pages/auth/login';
 
-export function App() {
+
+function MainLayout() {
   return (
-    <BrowserRouter>
       <div className="min-h-screen bg-gray-100 font-sans">
-        {/* Persistent Navigation Bar */}
         <nav className="bg-white shadow px-6 py-4 flex gap-6 border-b">
           <Link to="/" className="text-gray-700 font-medium hover:text-blue-600">
             Home
@@ -16,14 +18,27 @@ export function App() {
           </Link>
         </nav>
 
-        {/* Dynamic Page Content Based on Route */}
         <main className="p-6">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/users" element={<UsersPage />} />
-          </Routes>
+          <Outlet/>
         </main>
       </div>
+  )
+}
+
+
+export function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+          <Route element={<MainLayout />}>
+            <Route path='/users' element={<UsersList />}/>
+            <Route path='/users/:id' element={<UserProfile />}/>
+          </Route>
+
+            // Include routes that dont need navbar
+          <Route path='/register' element={<UsersRegister />}/>
+          <Route path='/login' element={<UsersLogin />}/>
+      </Routes>
     </BrowserRouter>
   );
 }
